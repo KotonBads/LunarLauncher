@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 
+from xmlrpc.client import Boolean
 import fetch
 import requests
 import zipfile
@@ -12,7 +13,7 @@ GAMEDIR = f"{HOME}/.minecraft"
 WIDTH, HEIGHT = 1366, 768
 
 
-def download_artifacts(res, path):
+def download_artifacts(res: dict, path: str) -> None:
     for i in res["launchTypeData"]["artifacts"]:
         with open(f"{path}/{i['name']}", "wb") as f:
             print(f"Downloading {i['name']}...")
@@ -23,7 +24,7 @@ def download_artifacts(res, path):
         zip_ref.extractall(f"{path}/natives")
 
 
-def launch(jvm_path: str, path: str):
+def launch(jvm_path: str, path: str) -> None:
     extra_args = [
         "--add-modules",
         "jdk.naming.dns",
@@ -85,30 +86,26 @@ com.moonsworth.lunar.patcher.LunarMain \
     )
 
 
-def checksum(path, res):
+def checksum(res: dict, path: str) -> bool:
     lc_sha1 = [i["sha1"] for i in res["launchTypeData"]["artifacts"]]
-    current_sha1 = []
+    current_sha1 = [
+        os.popen(f"sha1sum {path}/{i.name} " + "| awk '{ print $1 }'").read().strip()
+        for i in os.scandir(path)
+        if i.is_file()
+    ]
 
-    for i in os.scandir(path):
-        if i.is_file():
-            current_sha1.append(
-                os.popen(f"sha1sum {path}/{i.name} " + "| awk '{ print $1 }'")
-                .read()
-                .strip()
-            )
-
-    return not len(set(zip(lc_sha1, current_sha1))) == len(lc_sha1)
+    return len(set(zip(lc_sha1, current_sha1))) != len(lc_sha1)
 
 
-def main(path: str, jvm_path: str):
+def main(path: str, jvm_path: str, res: dict):
     if not jvm_path:
         jvm_path = f"{HOME}/.lunarclient/jre/zulu17*/bin/java"
 
     if not os.path.exists(path):
         os.mkdir(path)
 
-    if checksum(path, fetch.res):
-        download_artifacts(fetch.res, path)
+    if checksum(res, path):
+        download_artifacts(res, path)
     launch(
         jvm_path,
         path,
@@ -119,5 +116,6 @@ def main(path: str, jvm_path: str):
 if __name__ == "__main__":
     main(
         input("Lunar Artifacts Path (eg: .lunarclient/offline/<VER>): "),
-        input("Java Executable Path (leave blank for zulu 17): ")
+        input("Java Executable Path (leave blank for zulu 17): "),
+        fetch.res,
     )
