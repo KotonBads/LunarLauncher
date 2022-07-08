@@ -5,12 +5,17 @@ Launcher for Lunar Client written in Python. Currently only works on Linux and i
 # Installation
 
 Clone this repository
-```
+```bash
 git clone https://github.com/KotonBads/LunarLauncher.git
 ```
 
-Run `main.py`
+Install all requirements
+```bash
+pip install -r requirements.txt
 ```
+
+Run `main.py`
+```bash
 chmod +x main.py
 # or
 python3 main.py
