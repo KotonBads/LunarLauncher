@@ -66,11 +66,10 @@ def checksum(res: dict, path: str) -> bool:
         if i.is_file()
     ]
 
-    return (
-        True
-        if os.path.exists(f"{path}/natives")
-        else len(set(zip(lc_sha1, current_sha1))) != len(lc_sha1)
-    )
+    if not os.path.exists(f"{path}/natives") or len(
+        set(zip(lc_sha1, current_sha1))
+    ) != len(lc_sha1):
+        return True
 
 
 def config() -> dict[str, int]:
@@ -96,6 +95,7 @@ def main(res: dict):
 
     if checksum(res, path):
         download_artifacts(res, path)
+
     launch(jvm_path, path, config())
 
 
