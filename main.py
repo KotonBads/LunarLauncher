@@ -10,8 +10,6 @@ import json
 
 
 HOME = os.getenv("HOME")
-GAMEDIR = f"{HOME}/.minecraft"
-WIDTH, HEIGHT = 1366, 768
 
 
 def download_artifacts(res: dict, path: str) -> None:
@@ -25,7 +23,7 @@ def download_artifacts(res: dict, path: str) -> None:
         zip_ref.extractall(f"{path}/natives")
 
 
-def launch(jvm_path: str, path: str, jvm_args: list) -> None:
+def launch(jvm_path: str, path: str, config: dict) -> None:
     extra_args = [
         "--add-modules",
         "jdk.naming.dns",
@@ -38,33 +36,6 @@ def launch(jvm_path: str, path: str, jvm_args: list) -> None:
         "java.base/java.io=ALL-UNNAMED",
     ]
 
-    # main_args = [
-    #     "-Xms2G",
-    #     "-Xmx2G",
-    #     "-Xverify:none",
-    #     "-Xss2M",
-    #     "-Xmn1G",
-    #     "-XX:+UnlockExperimentalVMOptions",
-    #     "-XX:+AlwaysActAsServerClassMachine",
-    #     "-XX:MaxTenuringThreshold=1",
-    #     "-XX:SurvivorRatio=32",
-    #     "-XX:G1HeapRegionSize=8M",
-    #     "-XX:GCTimeLimit=50",
-    #     "-XX:G1MixedGCCountTarget=4",
-    #     "-XX:G1MixedGCLiveThresholdPercent=90",
-    #     "-XX:-UsePerfData",
-    #     "-XX:+PerfDisableSharedMem",
-    #     "-XX:+AlwaysPreTouch",
-    #     # "-XX:JVMCIThreads=2",
-    #     "-XX:+EliminateLocks",
-    #     "-XX:+AggressiveHeap",
-    #     # "-XX:+EnableJVMCIProduct",
-    #     # "-XX:+EnableJVMCI",
-    #     # "-XX:+UseJVMCICompiler",
-    #     # "-XX:+EagerJVMCI",
-    #     # "-Djvmci.Compiler=graal"
-    # ]
-
     lunar_files = [
         f"{path}/{i.name}"
         for i in os.scandir(path)
@@ -74,15 +45,15 @@ def launch(jvm_path: str, path: str, jvm_args: list) -> None:
     os.system(
         f"{jvm_path} \
 {' '.join(extra_args)} \
-{' '.join(jvm_args)} \
+{' '.join(config['jvm_args'])} \
 -cp {':'.join(lunar_files)} \
 com.moonsworth.lunar.patcher.LunarMain \
 --accessToken 0 \
 --version 1.8 \
 --assetIndex 1.8 \
---gameDir {GAMEDIR} \
+--gameDir {config['game_dir']} \
 --texturesDir {HOME}/.lunarclient/textures \
---width {WIDTH} --height {HEIGHT} \
+--width {config['width']} --height {config['height']} \
 "
     )
 
@@ -119,14 +90,13 @@ def config() -> dict[str, int]:
 def main(res: dict):
     path = config()["artifact_path"]
     jvm_path = config()["jvm_path"] or f"{HOME}/.lunarclient/jre/zulu17*/bin/java"
-    
+
     if not os.path.exists(path):
         os.mkdir(path)
 
     if checksum(res, path):
         download_artifacts(res, path)
-    launch(jvm_path, path, config()["jvm_args"])
-    # print(checksum(path, fetch.res))
+    launch(jvm_path, path, config())
 
 
 if __name__ == "__main__":
