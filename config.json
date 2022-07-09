@@ -1,0 +1,27 @@
+{
+    "jvm_args": [
+        "-Xms2G",
+        "-Xmx2G",
+        "-Xverify:none",
+        "-Xss2M",
+        "-Xmn1G",
+        "-XX:+UnlockExperimentalVMOptions",
+        "-XX:+AlwaysActAsServerClassMachine",
+        "-XX:MaxTenuringThreshold=1",
+        "-XX:SurvivorRatio=32",
+        "-XX:G1HeapRegionSize=8M",
+        "-XX:GCTimeLimit=50",
+        "-XX:G1MixedGCCountTarget=4",
+        "-XX:G1MixedGCLiveThresholdPercent=90",
+        "-XX:-UsePerfData",
+        "-XX:+PerfDisableSharedMem",
+        "-XX:+AlwaysPreTouch",
+        "-XX:+EliminateLocks",
+        "-XX:+AggressiveHeap"
+    ],
+    "jvm_path": "$HOME/.lunarclient/jre/zulu17*/bin/java",
+    "artifact_path": "$HOME/.lunarclient/offline/1.8",
+    "game_dir": "$HOME/.minecraft",
+    "width": 1920,
+    "height": 1080
+}
