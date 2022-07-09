@@ -6,6 +6,7 @@ import requests
 import zipfile
 import os
 import glob
+import json
 
 
 HOME = os.getenv("HOME")
@@ -99,6 +100,10 @@ def checksum(res: dict, path: str) -> bool:
         if os.path.exists(f"{path}/natives")
         else len(set(zip(lc_sha1, current_sha1))) != len(lc_sha1)
     )
+
+
+def config():
+    pass
 
 
 def main(path: str, jvm_path: str, res: dict):
