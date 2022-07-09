@@ -6,6 +6,7 @@ import requests
 import zipfile
 import os
 import glob
+import json
 
 
 HOME = os.getenv("HOME")
@@ -24,7 +25,7 @@ def download_artifacts(res: dict, path: str) -> None:
         zip_ref.extractall(f"{path}/natives")
 
 
-def launch(jvm_path: str, path: str) -> None:
+def launch(jvm_path: str, path: str, jvm_args: list) -> None:
     extra_args = [
         "--add-modules",
         "jdk.naming.dns",
@@ -37,32 +38,32 @@ def launch(jvm_path: str, path: str) -> None:
         "java.base/java.io=ALL-UNNAMED",
     ]
 
-    main_args = [
-        "-Xms2G",
-        "-Xmx2G",
-        "-Xverify:none",
-        "-Xss2M",
-        "-Xmn1G",
-        "-XX:+UnlockExperimentalVMOptions",
-        "-XX:+AlwaysActAsServerClassMachine",
-        "-XX:MaxTenuringThreshold=1",
-        "-XX:SurvivorRatio=32",
-        "-XX:G1HeapRegionSize=8M",
-        "-XX:GCTimeLimit=50",
-        "-XX:G1MixedGCCountTarget=4",
-        "-XX:G1MixedGCLiveThresholdPercent=90",
-        "-XX:-UsePerfData",
-        "-XX:+PerfDisableSharedMem",
-        "-XX:+AlwaysPreTouch",
-        # "-XX:JVMCIThreads=2",
-        "-XX:+EliminateLocks",
-        "-XX:+AggressiveHeap",
-        # "-XX:+EnableJVMCIProduct",
-        # "-XX:+EnableJVMCI",
-        # "-XX:+UseJVMCICompiler",
-        # "-XX:+EagerJVMCI",
-        # "-Djvmci.Compiler=graal"
-    ]
+    # main_args = [
+    #     "-Xms2G",
+    #     "-Xmx2G",
+    #     "-Xverify:none",
+    #     "-Xss2M",
+    #     "-Xmn1G",
+    #     "-XX:+UnlockExperimentalVMOptions",
+    #     "-XX:+AlwaysActAsServerClassMachine",
+    #     "-XX:MaxTenuringThreshold=1",
+    #     "-XX:SurvivorRatio=32",
+    #     "-XX:G1HeapRegionSize=8M",
+    #     "-XX:GCTimeLimit=50",
+    #     "-XX:G1MixedGCCountTarget=4",
+    #     "-XX:G1MixedGCLiveThresholdPercent=90",
+    #     "-XX:-UsePerfData",
+    #     "-XX:+PerfDisableSharedMem",
+    #     "-XX:+AlwaysPreTouch",
+    #     # "-XX:JVMCIThreads=2",
+    #     "-XX:+EliminateLocks",
+    #     "-XX:+AggressiveHeap",
+    #     # "-XX:+EnableJVMCIProduct",
+    #     # "-XX:+EnableJVMCI",
+    #     # "-XX:+UseJVMCICompiler",
+    #     # "-XX:+EagerJVMCI",
+    #     # "-Djvmci.Compiler=graal"
+    # ]
 
     lunar_files = [
         f"{path}/{i.name}"
@@ -73,7 +74,7 @@ def launch(jvm_path: str, path: str) -> None:
     os.system(
         f"{jvm_path} \
 {' '.join(extra_args)} \
-{' '.join(main_args)} \
+{' '.join(jvm_args)} \
 -cp {':'.join(lunar_files)} \
 com.moonsworth.lunar.patcher.LunarMain \
 --accessToken 0 \
@@ -101,25 +102,34 @@ def checksum(res: dict, path: str) -> bool:
     )
 
 
-def main(path: str, jvm_path: str, res: dict):
-    if not jvm_path:
-        jvm_path = f"{HOME}/.lunarclient/jre/zulu17*/bin/java"
+def config() -> dict[str, int]:
+    with open("config.json", "r") as f:
+        f = json.load(f)
 
+    return {
+        "jvm_args": (f["jvm_args"]),
+        "jvm_path": os.path.expandvars((f["jvm_path"])),
+        "artifact_path": os.path.expandvars(f["artifact_path"]),
+        "game_dir": os.path.expandvars(f["game_dir"]),
+        "width": f["width"],
+        "height": f["height"],
+    }
+
+
+def main(res: dict):
+    path = config()["artifact_path"]
+    jvm_path = config()["jvm_path"] or f"{HOME}/.lunarclient/jre/zulu17*/bin/java"
+    
     if not os.path.exists(path):
         os.mkdir(path)
 
     if checksum(res, path):
         download_artifacts(res, path)
-    launch(
-        jvm_path,
-        path,
-    )
+    launch(jvm_path, path, config()["jvm_args"])
     # print(checksum(path, fetch.res))
 
 
 if __name__ == "__main__":
     main(
-        input("Lunar Artifacts Path (eg: .lunarclient/offline/<VER>): "),
-        input("Java Executable Path (leave blank for zulu 17): "),
         fetch.res,
     )
