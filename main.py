@@ -5,6 +5,7 @@ import fetch
 import requests
 import zipfile
 import os
+import glob
 
 
 HOME = os.getenv("HOME")
@@ -18,7 +19,7 @@ def download_artifacts(res: dict, path: str) -> None:
             print(f"Downloading {i['name']}...")
             f.write(requests.get(i["url"]).content)
 
-    with zipfile.ZipFile(f"{path}/natives-linux-x64.zip", "r") as zip_ref:
+    with zipfile.ZipFile(glob.glob(f"{path}/natives-*.zip")[0], "r") as zip_ref:
         print("Extracting Natives...")
         zip_ref.extractall(f"{path}/natives")
 
@@ -93,7 +94,11 @@ def checksum(res: dict, path: str) -> bool:
         if i.is_file()
     ]
 
-    return len(set(zip(lc_sha1, current_sha1))) != len(lc_sha1)
+    return (
+        True
+        if os.path.exists(f"{path}/natives")
+        else len(set(zip(lc_sha1, current_sha1))) != len(lc_sha1)
+    )
 
 
 def main(path: str, jvm_path: str, res: dict):
